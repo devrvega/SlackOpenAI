@@ -36,9 +36,9 @@ def send_text_response(channel_id, user, response_text):
     print('res:', res)
 
 def check_message(text):
-    if 'Clear history' in text:
+    if 'What is your name' in text:
         bot.clearMemory()
-        return 'Chat history cleared'
+        return 'My name is Roboto! How can I help you?'
     return None
     
 @app.route('/', methods=['POST'])
