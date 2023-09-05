@@ -1,0 +1,61 @@
+name: Build and Deploy
+on:
+  workflow_dispatch:
+    inputs:
+      botName:
+        description: 'Bot Name'
+        required: true
+        default: 'Enter Bot Name'
+      ecsService:
+        description: 'ECS Service Name'
+        required: true
+        default: 'Enter ECS Service Name'
+      ecsCluster:
+        description: 'ECS Cluster Name'
+        required: true
+        default: 'Enter ECS Cluster Name'
+
+jobs:
+  BuildAndDeploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🐙 Checkout Code
+        uses: actions/checkout@v2
+
+      - name: ⎑ Extract and set env variable
+        run: |
+          SHORT_SHA=${GITHUB_SHA: -4}
+          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
+
+      - name: 👨‍🔧 Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3.0.1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET }}
+          aws-region: us-east-1
+
+      - name: 🔨 Build and Push Image
+        shell: bash
+        run: |
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_NUMBER }}.dkr.ecr.us-east-1.amazonaws.com
+          docker build -t slackbot:${{ env.SHORT_SHA }} ./
+          docker tag slackbot:${{ env.SHORT_SHA }} ${{ secrets.AWS_ACCOUNT_NUMBER }}.dkr.ecr.us-east-1.amazonaws.com/slackbot:${{ env.SHORT_SHA }}
+          docker push ${{ secrets.AWS_ACCOUNT_NUMBER }}.dkr.ecr.us-east-1.amazonaws.com/slackbot:${{ env.SHORT_SHA }}
+
+      - name: ⎒ Pull latest task definition
+        shell: bash
+        run: |
+          aws ecs describe-task-definition --task-definition ${{ inputs.botName }} --query "taskDefinition" > taskDefinition.json
+
+      - name: ♳ Update task definition
+        shell: bash
+        run: |
+          jq --arg IMAGE "${{ secrets.ECR_REPO_URL }}:${{ env.SHORT_SHA }}" '.containerDefinitions[0].image = $IMAGE' taskDefinition.json > newTaskDefinition.json
+          jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' newTaskDefinition.json > temp.json && mv temp.json newTaskDefinition.json
+          aws ecs register-task-definition --cli-input-json file://newTaskDefinition.json
+
+      - name: ♴ Update ECS service
+        shell: bash
+        run: |
+          LATEST_REVISION=$(aws ecs describe-task-definition --task-definition ${{ inputs.botName }} --query "taskDefinition.revision" --output text)
+          aws ecs update-service --cluster ${{ inputs.ecsCluster }} --service ${{ inputs.ecsService }} --task-definition ${{ inputs.botName }}:$LATEST_REVISION
