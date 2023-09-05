@@ -59,7 +59,7 @@ Here is a diagram of my architecture:
 
 - You will need a Slack workspace.
 - You will need access to create a Slack app.
-- (Quick Start Guide)[https://api.slack.com/start/quickstart] for Slack apps.
+- [Quick Start Guide](https://api.slack.com/start/quickstart) for Slack apps.
 
 Hopefully I can make a guide on Medium with more detailed instructions.
 
