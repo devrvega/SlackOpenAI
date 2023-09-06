@@ -3,5 +3,5 @@ flask
 gunicorn
 langchain
 openai
-python-dotenv
+slack_bolt
 tiktoken
