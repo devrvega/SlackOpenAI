@@ -18,7 +18,7 @@ If you find this useful, please consider [buying me a coffee](https://www.buymea
 
 ## To Do
 
-- [ ] Refactor to use [Slack Bolt](https://slack.dev/bolt-python/tutorial/getting-started)
+- [x] Refactor to use [Slack Bolt](https://slack.dev/bolt-python/tutorial/getting-started)
 - [ ] Add AWS CDK for infrastructure for easier deployment
 
 ---
@@ -104,8 +104,6 @@ All you would need to do is just send a message directly to the bot. If everythi
 
 ---
 
-<center>
 <br>
 <strong>Buy me a Coffee</strong> <br>
 <img src="./images/bmc_qr.png" width=10% />
-</center>
